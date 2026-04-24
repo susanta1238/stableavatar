@@ -8,7 +8,7 @@ apt-get update -y
 apt-get install -y redis-server ffmpeg git-lfs
 
 echo "[setup] installing python deps..."
-pip install --no-cache-dir torch==2.6.0 torchvision==0.21.0 torchaudio==2.1.1 \
+pip install --no-cache-dir torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 \
     --index-url https://download.pytorch.org/whl/cu124
 pip install --no-cache-dir -r requirements.txt
 pip install --no-cache-dir "huggingface_hub[cli]"

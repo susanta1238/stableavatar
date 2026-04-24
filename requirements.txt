@@ -4,12 +4,11 @@ einops
 safetensors
 timm
 tomesd
-torch==2.7.0
+# torch/torchvision/torchaudio are installed by api/setup.sh from the CUDA index; do not re-pin here.
 torchdiffeq
 torchsde
 decord
 datasets
-torchvision==0.22.0
 opencv-python>=4.9.0.80
 diffusers==0.30.1
 transformers==4.51.3
@@ -33,7 +32,6 @@ tensorboard
 beautifulsoup4
 ftfy
 librosa
-torchaudio==2.7.0
 moviepy==1.0.3
 
 # API server deps
