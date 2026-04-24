@@ -28,16 +28,17 @@ client ──HTTP──> FastAPI (uvicorn :8000) ──Redis──> Celery worke
    `https://<pod-id>-8000.proxy.runpod.net`.
 5. Start the service:
    ```bash
-   export API_KEY=your-long-random-key
    bash api/start.sh
    ```
    First request will wait ~60s for model load on worker boot. Check `/workspace/celery.log`.
+
+   > **No auth.** The API is open — anyone who can reach the URL can submit jobs.
+   > Keep the pod URL private, or put a reverse proxy with auth in front of it.
 
 ## Environment variables
 
 | Var | Default | Purpose |
 |---|---|---|
-| `API_KEY` | (required) | Clients send this in `X-API-Key` header |
 | `STABLEAVATAR_ROOT` | `/workspace/StableAvatar` | Repo root |
 | `STABLEAVATAR_WORK` | `/workspace` | Where uploads/outputs go |
 | `STABLEAVATAR_TRANSFORMER` | `.../transformer3d-square.pt` | Swap to `transformer3d-rec-vec.pt` for 480×832 / 832×480 |
@@ -73,17 +74,15 @@ Returns `{job_id, status, video_url?, error?}` where `status ∈ {queued, runnin
 Streams the final muxed MP4 (video + audio).
 
 ### `GET /health`
-No auth. Returns Redis + GPU status.
+Returns Redis + GPU status.
 
 ## Example with curl
 
 ```bash
 URL=https://<pod-id>-8000.proxy.runpod.net
-KEY=your-long-random-key
 
 # submit
 JOB=$(curl -s -X POST "$URL/jobs" \
-    -H "X-API-Key: $KEY" \
     -F image=@face.png \
     -F audio=@speech.wav \
     -F prompt="A woman speaking in a bright office" \
@@ -92,7 +91,7 @@ JOB=$(curl -s -X POST "$URL/jobs" \
 
 # poll
 while true; do
-    STATUS=$(curl -s -H "X-API-Key: $KEY" "$URL/jobs/$JOB" \
+    STATUS=$(curl -s "$URL/jobs/$JOB" \
         | python -c "import sys,json; print(json.load(sys.stdin)['status'])")
     echo "status: $STATUS"
     [ "$STATUS" = "done" ] || [ "$STATUS" = "failed" ] && break
@@ -100,7 +99,7 @@ while true; do
 done
 
 # download
-curl -s -H "X-API-Key: $KEY" "$URL/videos/$JOB" -o output.mp4
+curl -s "$URL/videos/$JOB" -o output.mp4
 ```
 
 ## Example with Python
@@ -109,10 +108,8 @@ curl -s -H "X-API-Key: $KEY" "$URL/videos/$JOB" -o output.mp4
 import requests, time
 
 URL = "https://<pod-id>-8000.proxy.runpod.net"
-KEY = "your-long-random-key"
-H = {"X-API-Key": KEY}
 
-job = requests.post(f"{URL}/jobs", headers=H, files={
+job = requests.post(f"{URL}/jobs", files={
     "image": open("face.png", "rb"),
     "audio": open("speech.wav", "rb"),
 }, data={
@@ -121,14 +118,14 @@ job = requests.post(f"{URL}/jobs", headers=H, files={
 }).json()["job_id"]
 
 while True:
-    s = requests.get(f"{URL}/jobs/{job}", headers=H).json()
+    s = requests.get(f"{URL}/jobs/{job}").json()
     if s["status"] in ("done", "failed"):
         break
     time.sleep(10)
 
 if s["status"] == "done":
     open("output.mp4", "wb").write(
-        requests.get(f"{URL}/videos/{job}", headers=H).content
+        requests.get(f"{URL}/videos/{job}").content
     )
 ```
 

@@ -1,14 +1,11 @@
-import os
 from pathlib import Path
-from typing import Optional
 
 import redis
 import torch
-from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from api.config import (
-    API_KEY,
     ALLOWED_RESOLUTIONS,
     DEFAULTS,
     OUTPUT_DIR,
@@ -20,13 +17,6 @@ from api.celery_app import celery_app
 
 app = FastAPI(title="StableAvatar API")
 r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
-
-
-def _check_auth(x_api_key: Optional[str]) -> None:
-    if not API_KEY or API_KEY == "change-me":
-        raise HTTPException(500, "server API_KEY not configured")
-    if x_api_key != API_KEY:
-        raise HTTPException(401, "invalid API key")
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -45,7 +35,6 @@ def health():
 
 @app.post("/jobs", response_model=JobCreatedResponse)
 def create_job(
-    x_api_key: Optional[str] = Header(None),
     image: UploadFile = File(...),
     audio: UploadFile = File(...),
     prompt: str = Form(...),
@@ -59,8 +48,6 @@ def create_job(
     motion_frame: int = Form(DEFAULTS["motion_frame"]),
     seed: int = Form(DEFAULTS["seed"]),
 ):
-    _check_auth(x_api_key)
-
     if (width, height) not in ALLOWED_RESOLUTIONS:
         raise HTTPException(400, f"resolution must be one of {sorted(ALLOWED_RESOLUTIONS)}")
     if not (20 <= sample_steps <= 60):
@@ -101,8 +88,7 @@ def create_job(
 
 
 @app.get("/jobs/{job_id}", response_model=JobStatusResponse)
-def job_status(job_id: str, x_api_key: Optional[str] = Header(None)):
-    _check_auth(x_api_key)
+def job_status(job_id: str):
     data = r.hgetall(f"job:{job_id}")
     if not data:
         raise HTTPException(404, "job not found")
@@ -116,8 +102,7 @@ def job_status(job_id: str, x_api_key: Optional[str] = Header(None)):
 
 
 @app.get("/videos/{job_id}")
-def download_video(job_id: str, x_api_key: Optional[str] = Header(None)):
-    _check_auth(x_api_key)
+def download_video(job_id: str):
     path = Path(OUTPUT_DIR) / job_id / "video.mp4"
     if not path.exists():
         raise HTTPException(404, "video not found")

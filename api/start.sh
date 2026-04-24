@@ -4,7 +4,6 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 
-: "${API_KEY:?API_KEY env var must be set}"
 : "${STABLEAVATAR_ROOT:=$(pwd)}"
 export STABLEAVATAR_ROOT
 

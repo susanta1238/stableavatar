@@ -21,4 +21,4 @@ else
     echo "[setup] checkpoints already present, skipping download."
 fi
 
-echo "[setup] done. Next: export API_KEY=... && bash api/start.sh"
+echo "[setup] done. Next: bash api/start.sh"

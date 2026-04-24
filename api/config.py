@@ -29,7 +29,6 @@ WAV2VEC_PATH = os.getenv(
 GPU_MEMORY_MODE = os.getenv("STABLEAVATAR_GPU_MODE", "model_full_load")
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-API_KEY = os.getenv("API_KEY", "change-me")
 
 JOB_TTL_SECONDS = 60 * 60 * 24
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
